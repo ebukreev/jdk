@@ -7047,6 +7047,30 @@ instruct regL_not_reg(iRegLNoSp dst, iRegL src1, immL_M1 m1) %{
   ins_pipe(ialu_reg_imm);
 %}
 
+instruct overflowMulL_reg_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl, rFlagsReg cr)
+%{
+  match(If cmp (OverflowMulL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow); // Exact math operations only use 'overflow' flag
+  effect(USE lbl, KILL cr);
+
+  ins_cost(IMUL_COST + ALU_COST); // Branch (overflow) is rare, assume the faster path
+  format %{
+    "mul  t0, $op1, $op2\t#overflow check long\n\t"
+    "mulh t1, $op1, $op2\n\t"
+    "srai t0, t0, 63\n\t"
+    "bne t0, t1, $lbl"
+  %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    __ mul(t0, as_Register($op1$$reg), as_Register($op2$$reg));  // Lower result bits (63..0)
+    __ mulh(t1, as_Register($op1$$reg), as_Register($op2$$reg)); // Higher result bits (127..64)
+    __ srai(t0, t0, 63);                                         // Fill lower half with pure sign
+    __ bne(t0, t1, *L);                                          // Branch on overflow (signs are not equal)
+  %}
+
+  ins_pipe(pipe_serial);
+%}
 
 // ============================================================================
 // Floating Point Arithmetic Instructions
