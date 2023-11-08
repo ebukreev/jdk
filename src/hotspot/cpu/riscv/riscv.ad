@@ -7047,6 +7047,27 @@ instruct regL_not_reg(iRegLNoSp dst, iRegL src1, immL_M1 m1) %{
   ins_pipe(ialu_reg_imm);
 %}
 
+//----------Overflow Math Instructions-----------------------------------------
+instruct overflowMulI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl, rFlagsReg cr)
+%{
+  match(If cmp (OverflowMulI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow
+            || n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, USE op1, USE op2, KILL cr);
+
+  format %{ "mul    t0, $op1, $op2\n\t"
+            "sext.w t1, t0\n\t"
+            "b$cmp t0, t1" %}
+  ins_cost(IMUL_COST + ALU_COST);
+  ins_encode %{
+    BoolTest::mask test = $cmp$$cmpcode == BoolTest::overflow ? BoolTest::ne : BoolTest::eq;
+    __ mul(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ sext_w(t1, t0);
+    __ cmp_branch(test, t0, t1, *($lbl$$label));
+  %}
+  ins_pipe(pipe_serial);
+%}
+
 instruct overflowMulL_reg_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl, rFlagsReg cr)
 %{
   match(If cmp (OverflowMulL op1 op2));
