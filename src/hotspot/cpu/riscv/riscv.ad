@@ -7048,12 +7048,31 @@ instruct regL_not_reg(iRegLNoSp dst, iRegL src1, immL_M1 m1) %{
 %}
 
 //----------Overflow Math Instructions-----------------------------------------
+instruct overflowMulI_reg(rFlagsReg cr, iRegI op1, iRegI op2) %{
+  match(Set cr (OverflowMulI op1 op2));
+
+  ins_cost(IMUL_COST + ALU_COST * 2);
+  format %{
+    "mul    t0, $op1, $op2\n\t"
+    "sext.w t1, t0\n\t"
+    "xorr   $cr, t0, t1"
+  %}
+
+  ins_encode %{
+    __ mul(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ sext_w(t1, t0);
+    __ xorr(as_Register($cr$$reg), t0, t1);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 instruct overflowMulI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl, rFlagsReg cr)
 %{
   match(If cmp (OverflowMulI op1 op2));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow
             || n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
-  effect(USE lbl, USE op1, USE op2, KILL cr);
+  effect(USE lbl, KILL cr);
 
   format %{ "mul    t0, $op1, $op2\n\t"
             "sext.w t1, t0\n\t"
@@ -7068,13 +7087,34 @@ instruct overflowMulI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl, rFl
   ins_pipe(pipe_serial);
 %}
 
+instruct overflowMulL_reg(rFlagsReg cr, iRegL op1, iRegL op2) %{
+  match(Set cr (OverflowMulL op1 op2));
+
+  ins_cost(IMUL_COST * 2 + ALU_COST * 2);
+  format %{
+    "mul  t0, $op1, $op2\t#overflow check long\n\t"
+    "mulh t1, $op1, $op2\n\t"
+    "srai t0, t0, 63\n\t"
+    "xorr $cr, t0, t1"
+  %}
+
+  ins_encode %{
+    __ mul(t0, as_Register($op1$$reg), as_Register($op2$$reg));  // Lower result bits (63..0)
+    __ mulh(t1, as_Register($op1$$reg), as_Register($op2$$reg)); // Higher result bits (127..64)
+    __ srai(t0, t0, 63);                                         // Fill lower half with pure sign
+    __ xorr(as_Register($cr$$reg), t0, t1);                      // Overflow if not equal
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
 instruct overflowMulL_reg_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl, rFlagsReg cr)
 %{
   match(If cmp (OverflowMulL op1 op2));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow); // Exact math operations only use 'overflow' flag
   effect(USE lbl, KILL cr);
 
-  ins_cost(IMUL_COST + ALU_COST); // Branch (overflow) is rare, assume the faster path
+  ins_cost(IMUL_COST * 2 + ALU_COST); // Branch (overflow) is rare, assume the faster path
   format %{
     "mul  t0, $op1, $op2\t#overflow check long\n\t"
     "mulh t1, $op1, $op2\n\t"
