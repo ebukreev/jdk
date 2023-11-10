@@ -7074,7 +7074,7 @@ instruct overflowMulL_reg_branch(cmpOp cmp, iRegL op1, iRegL op2, label lbl, rFl
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow); // Exact math operations only use 'overflow' flag
   effect(USE lbl, KILL cr);
 
-  ins_cost(IMUL_COST + ALU_COST); // Branch (overflow) is rare, assume the faster path
+  ins_cost(IMUL_COST * 2 + ALU_COST); // Branch (overflow) is rare, assume the faster path
   format %{
     "mul  t0, $op1, $op2\t#overflow check long\n\t"
     "mulh t1, $op1, $op2\n\t"
