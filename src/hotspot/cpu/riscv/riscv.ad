@@ -7053,7 +7053,7 @@ instruct overflowMulI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl, rFl
   match(If cmp (OverflowMulI op1 op2));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow
             || n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
-  effect(USE lbl, USE op1, USE op2, KILL cr);
+  effect(USE lbl, KILL cr);
 
   format %{ "mul    t0, $op1, $op2\n\t"
             "sext.w t1, t0\n\t"
