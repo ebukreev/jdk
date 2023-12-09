@@ -7064,7 +7064,7 @@ instruct overflowMulI_reg(rFlagsReg cr, iRegI op1, iRegI op2) %{
     __ xorr(as_Register($cr$$reg), t0, t1);
   %}
 
-  ins_pipe(pipe_serial);
+  ins_pipe(pipe_class_default);
 %}
 
 // instruct overflowMulI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl, rFlagsReg cr)
