@@ -1548,6 +1548,8 @@ void C2_MacroAssembler::enc_cmpEqNe_imm0_branch(int cmpFlag, Register op1, Label
       bnez(op1, L, is_far);
       break;
     default:
+      warning("unsupported cmpflag: %d", cmpFlag);
+      warning("flag register: %s", op1->name());
       ShouldNotReachHere();
   }
 }
