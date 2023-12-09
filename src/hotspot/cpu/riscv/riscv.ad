@@ -3842,26 +3842,6 @@ operand cmpOpUEqNeLeGt()
   %}
 %}
 
-// used for exact math (with overflow check)
-operand cmpOpOverflow()
-%{
-  match(Bool);
-  op_cost(0);
-  predicate(n->as_Bool()->_test._test == BoolTest::overflow ||
-            n->as_Bool()->_test._test == BoolTest::no_overflow);
-
-  format %{ "" %}
-  interface(COND_INTER) %{
-    equal(0x0, "eq");
-    greater(0x1, "gt");
-    overflow(0x2, "overflow");
-    less(0x3, "lt");
-    not_equal(0x4, "ne");
-    less_equal(0x5, "le");
-    no_overflow(0x6, "no_overflow");
-    greater_equal(0x7, "ge");
-  %}
-%}
 
 // Flags register, used as output of compare logic
 operand rFlagsReg()
@@ -9417,21 +9397,6 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label 
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($op1$$reg), *($lbl$$label));
   %}
 
-  ins_pipe(pipe_cmpz_branch);
-  ins_short_branch(1);
-%}
-
-// Compare overflow flags and branch near instructions.
-instruct cmpFlag_overflow(cmpOpOverflow cmp, rFlagsReg cr, label lbl) %{
-  match(If cmp cr);
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-  format %{ "b$cmp  $cr, zr, $lbl\t#@cmpFlag_overflow" %}
-
-  ins_encode %{
-    __ enc_cmpOverflow_imm0_branch($cmp$$cmpcode, as_Register($cr$$reg), *($lbl$$label));
-  %}
   ins_pipe(pipe_cmpz_branch);
   ins_short_branch(1);
 %}

@@ -103,9 +103,6 @@
   void enc_cmpEqNe_imm0_branch(int cmpFlag, Register op,
                                Label& L, bool is_far = false);
 
-  void enc_cmpOverflow_imm0_branch(int cmpFlag, Register op,
-                               Label& L, bool is_far = false);
-
   void enc_cmove(int cmpFlag,
                  Register op1, Register op2,
                  Register dst, Register src);
