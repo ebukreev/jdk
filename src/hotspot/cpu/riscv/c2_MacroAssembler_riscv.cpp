@@ -1542,10 +1542,21 @@ void C2_MacroAssembler::enc_cmpUEqNeLeGt_imm0_branch(int cmpFlag, Register op1, 
 void C2_MacroAssembler::enc_cmpEqNe_imm0_branch(int cmpFlag, Register op1, Label& L, bool is_far) {
   switch (cmpFlag) {
     case BoolTest::eq:
-    case BoolTest::no_overflow:
       beqz(op1, L, is_far);
       break;
     case BoolTest::ne:
+      bnez(op1, L, is_far);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::enc_cmpOverflow_imm0_branch(int cmpFlag, Register op1, Label& L, bool is_far) {
+  switch (cmpFlag) {
+    case BoolTest::no_overflow:
+      beqz(op1, L, is_far);
+      break;
     case BoolTest::overflow:
       bnez(op1, L, is_far);
       break;
