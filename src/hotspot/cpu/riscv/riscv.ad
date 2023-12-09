@@ -7051,11 +7051,17 @@ instruct regL_not_reg(iRegLNoSp dst, iRegL src1, immL_M1 m1) %{
 instruct overflowMulI_reg(rFlagsReg cr, iRegI op1, iRegI op2) %{
   match(Set cr (OverflowMulI op1 op2));
 
-  ins_cost(IMUL_COST + ALU_COST * 4);
+  ins_cost(IMUL_COST + ALU_COST * 2);
   format %{
+    "mul    t0, $op1, $op2\n\t"
+    "sext.w t1, t0\n\t"
+    "xorr   $cr, t0, t1"
   %}
 
   ins_encode %{
+    __ mul(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ sext_w(t1, t0);
+    __ xorr(as_Register($cr$$reg), t0, t1);
   %}
 
   ins_pipe(pipe_serial);
